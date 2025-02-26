@@ -3,8 +3,14 @@ source: SchoolName is duckdb.table('SchoolID.csv') extend{
     primary_key: SchoolID
 }
 
+source: Budget is duckdb.table('Expenses.csv') extend{
+    rename: OperatingBudget is TotalExpenses
+    primary_key: SchoolID
+}
+
 source: Enrollment is duckdb.table('Enrollment.csv') extend{
     join_one: SchoolName with SchoolID
+    join_one: Budget with SchoolID
     primary_key: SchoolID
 }
 
@@ -15,11 +21,6 @@ source: OldEnrollment is duckdb.table('./2019Enrollment.csv') extend{
 
 source: RetentionRates is duckdb.table('RetentionRates.csv') extend{
     join_one: SchoolName with SchoolID
-    primary_key: SchoolID
-}
-
-source: Budget is duckdb.table('Expenses.csv') extend{
-    rename: OperatingBudget is TotalExpenses
     primary_key: SchoolID
 }
 
@@ -233,8 +234,9 @@ run: Washington -> {
 >>>markdown
 Which schools closely match Gonzaga with regards to enrollment and budget?
 >>>malloy
-run: FinancialData -> {
-    group_by: SchoolName.SchoolName, Enrollment.TotalEnrollment, Budget.OperatingBudget
-    where: Enrollment.TotalEnrollment > 6000 AND Enrollment.TotalEnrollment < 8000
+run: Enrollment -> {
+    group_by: SchoolName.SchoolName, TotalEnrollment, Budget.OperatingBudget
+    where: TotalEnrollment > 6300 AND TotalEnrollment < 8300
     where: Budget.OperatingBudget > 250000000 AND Budget.OperatingBudget < 350000000
+    order_by: OperatingBudget desc
 }
