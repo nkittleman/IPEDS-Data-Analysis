@@ -1,0 +1,240 @@
+>>>malloy
+source: SchoolName is duckdb.table('SchoolID.csv') extend{
+    primary_key: SchoolID
+}
+
+source: Enrollment is duckdb.table('Enrollment.csv') extend{
+    join_one: SchoolName with SchoolID
+    primary_key: SchoolID
+}
+
+source: OldEnrollment is duckdb.table('./2019Enrollment.csv') extend{
+    join_one: SchoolName with SchoolID
+    primary_key: SchoolID
+}
+
+source: RetentionRates is duckdb.table('RetentionRates.csv') extend{
+    join_one: SchoolName with SchoolID
+    primary_key: SchoolID
+}
+
+source: Budget is duckdb.table('Expenses.csv') extend{
+    rename: OperatingBudget is TotalExpenses
+    primary_key: SchoolID
+}
+
+source: FinancialData is duckdb.table('FinancialData.csv') extend{
+    join_one: SchoolName with SchoolID
+    join_one: Enrollment with SchoolID
+    join_one: Budget with SchoolID
+    primary_key: SchoolID
+}
+
+source: GraduationRates is duckdb.table('GraduationRates.csv') extend{
+    join_one: Enrollment with SchoolID
+    join_one: RetentionRates with SchoolID
+    join_one: FinancialData with SchoolID
+}
+
+source: Washington is duckdb.table('Washington.csv') extend{
+    rename: SchoolID is `Institution Name`
+    rename: SchoolName is City
+    join_one: Enrollment with SchoolID
+    join_one: OldEnrollment with SchoolID
+}
+>>>markdown
+How do WCC schools compare to Pac-12 schools with regards to student body size?
+>>>malloy
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: Students is sum(Enrollment.TotalEnrollment)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: Students is sum(Enrollment.TotalEnrollment)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: Conference
+    aggregate: Students is sum(Enrollment.TotalEnrollment)
+}
+>>>markdown
+How do WCC schools compare to Pac-12 schools with regards to student retention rates?
+>>>malloy
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: RetentionRate is sum(RetentionRates.RetentionRate)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: RetentionRate is sum(RetentionRates.RetentionRate)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: Conference
+    aggregate: AvgRetentionRate is avg(RetentionRates.RetentionRate)
+}
+>>>markdown
+How do WCC schools compare to Pac-12 schools with regards to student graduation rates?
+>>>malloy
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: GraduationRate is sum(GraduationRate)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: GraduationRate is sum(GraduationRate)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: Conference
+    aggregate: AvgGraduationRate is avg(GraduationRate)
+}
+>>>markdown
+How do WCC schools compare to Pac-12 schools with regards to endowment amount?
+>>>malloy
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: Endowment is sum(Endowment)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: SchoolName, Conference
+    aggregate: Endowment is sum(Endowment)
+}
+>>>malloy
+# bar_chart
+run: GraduationRates -> {
+    group_by: Conference
+    aggregate: Endowment is sum(Endowment)
+}
+>>>markdown
+How does graduate student enrollment differ between schools in Washington State in 2024? How did it differ in 2019?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
+    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
+}
+>>>markdown
+How does graduate student enrollment differ by school sector in Washington State (Public / Private / For-Profit / Non-Profit) in 2024? How did it differ in 2019?
+>>>malloy
+run: Washington -> {
+    group_by: Sector
+    aggregate: `2024 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
+    aggregate: `2019 GraduateStudents` is sum(OldEnrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: Sector
+    aggregate: `2024 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: Sector
+    aggregate: `2019 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
+}
+>>>markdown
+How does graduate student enrollment differ between schools in Washington State with regards to race in 2024?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
+    # percent
+    aggregate: White is sum(Enrollment.GraduatePercentWhite / 100)
+    # percent
+    aggregate: Black is sum(Enrollment.GraduatePercentBlack / 100)
+    # percent
+    aggregate: Hispanic is sum(Enrollment.GraduatePercentHispanic / 100)
+    # percent
+    aggregate: Asian is sum(Enrollment.GraduatePercentAsian / 100)
+    # percent
+    aggregate: Native is sum(Enrollment.GraduatePercentIndian / 100)
+    # percent
+    aggregate: Hawaiian is sum(Enrollment.GraduatePercentHawaiian / 100)
+    # percent
+    aggregate: MixedRace is sum(Enrollment.GraduatePercentMixed / 100)
+    # percent
+    aggregate: `2+MixedRace` is sum(Enrollment.GraduatePercentTwoPlus / 100)
+    # percent
+    aggregate: Unknown is sum(Enrollment.GraduatePercentUnknown / 100)
+}
+>>>markdown
+How did graduate student enrollment differ in Washington State with regards to race in 2019?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2019 GraduateStudents` is sum(OldEnrollment.GraduateEnrollment)
+    # percent
+    aggregate: White is sum(OldEnrollment.GraduatePercentWhite / 100)
+    # percent
+    aggregate: Black is sum(OldEnrollment.GraduatePercentBlack / 100)
+    # percent
+    aggregate: Hispanic is sum(OldEnrollment.GraduatePercentHispanic / 100)
+    # percent
+    aggregate: Asian is sum(OldEnrollment.GraduatePercentAsian / 100)
+    # percent
+    aggregate: Native is sum(OldEnrollment.GraduatePercentNative / 100)
+    # percent
+    aggregate: Hawaiian is sum(OldEnrollment.GraduatePercentHawaiian / 100)
+    # percent
+    aggregate: MixedRace is sum(OldEnrollment.GraduatePercentMixed / 100)
+    # percent
+    aggregate: `2+MixedRace` is sum(OldEnrollment.GraduatePercent2Plus / 100)
+    # percent
+    aggregate: Unknown is sum(OldEnrollment.GraduatePercentUnknown / 100)
+}
+>>>markdown
+How does graduate student enrollment differ between schools in Washington State with regards to gender in 2024?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
+    # percent
+    aggregate: Female is sum(Enrollment.GraduatePercentWomen / 100)
+    # percent
+    aggregate: Male is sum((Enrollment.GraduatePercentWomen - 100) / -100)
+}
+>>>markdown
+How did graduate student enrollment differ in Washington State schools with regards to gender in 2019?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2019 GraduateStudents` is sum(OldEnrollment.GraduateEnrollment)
+    # percent
+    aggregate: Female is sum(OldEnrollment.GraduatePercentWomen / 100)
+    # percent
+    aggregate: Male is sum((OldEnrollment.GraduatePercentWomen - 100) / -100)
+}
+>>>markdown
+Which schools closely match Gonzaga with regards to enrollment and budget?
+>>>malloy
+run: FinancialData -> {
+    group_by: SchoolName.SchoolName, Enrollment.TotalEnrollment, Budget.OperatingBudget
+    where: Enrollment.TotalEnrollment > 6000 AND Enrollment.TotalEnrollment < 8000
+    where: Budget.OperatingBudget > 250000000 AND Budget.OperatingBudget < 350000000
+}
