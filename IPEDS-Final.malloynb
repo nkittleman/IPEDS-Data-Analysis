@@ -31,6 +31,12 @@ source: FinancialData is duckdb.table('FinancialData.csv') extend{
     primary_key: SchoolID
 }
 
+source: NewConference is duckdb.table('./Pac-12New.csv') extend{
+    join_one: Enrollment with SchoolID
+    join_one: RetentionRates with SchoolID
+    join_one: FinancialData with SchoolID
+}
+
 source: GraduationRates is duckdb.table('GraduationRates.csv') extend{
     join_one: Enrollment with SchoolID
     join_one: RetentionRates with SchoolID
@@ -44,7 +50,7 @@ source: Washington is duckdb.table('Washington.csv') extend{
     join_one: OldEnrollment with SchoolID
 }
 >>>markdown
-How do WCC schools compare to Pac-12 schools with regards to student body size?
+How do WCC schools compare to the old Pac-12 schools with regards to student body size?
 >>>malloy
 run: GraduationRates -> {
     group_by: SchoolName, Conference
@@ -63,7 +69,20 @@ run: GraduationRates -> {
     aggregate: Students is sum(Enrollment.TotalEnrollment)
 }
 >>>markdown
-How do WCC schools compare to Pac-12 schools with regards to student retention rates?
+How does Gonzaga compare to the new Pac-12 schools with regards to student body size?
+>>>malloy
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: Students is sum(Enrollment.TotalEnrollment)
+}
+>>>malloy
+# bar_chart
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: Students is sum(Enrollment.TotalEnrollment)
+}
+>>>markdown
+How do WCC schools compare to the old Pac-12 schools with regards to student retention rates?
 >>>malloy
 run: GraduationRates -> {
     group_by: SchoolName, Conference
@@ -82,7 +101,20 @@ run: GraduationRates -> {
     aggregate: AvgRetentionRate is avg(RetentionRates.RetentionRate)
 }
 >>>markdown
-How do WCC schools compare to Pac-12 schools with regards to student graduation rates?
+How does Gonzaga compare to the new Pac-12 schools with regards to retention rates?
+>>>malloy
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: RetentionRate is sum(RetentionRates.RetentionRate)
+}
+>>>malloy
+# bar_chart
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: RetentionRate is sum(RetentionRates.RetentionRate)
+}
+>>>markdown
+How do WCC schools compare to the old Pac-12 schools with regards to student graduation rates?
 >>>malloy
 run: GraduationRates -> {
     group_by: SchoolName, Conference
@@ -101,7 +133,20 @@ run: GraduationRates -> {
     aggregate: AvgGraduationRate is avg(GraduationRate)
 }
 >>>markdown
-How do WCC schools compare to Pac-12 schools with regards to endowment amount?
+How does Gonzaga compare to the new Pac-12 schools with regards to graduation rates?
+>>>malloy
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: GraduationRate is sum(GraduationRate)
+}
+>>>malloy
+# bar_chart
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: GraduationRate is sum(GraduationRate)
+}
+>>>markdown
+How do WCC schools compare to the old Pac-12 schools with regards to endowment amount?
 >>>malloy
 run: GraduationRates -> {
     group_by: SchoolName, Conference
@@ -117,6 +162,19 @@ run: GraduationRates -> {
 # bar_chart
 run: GraduationRates -> {
     group_by: Conference
+    aggregate: Endowment is sum(Endowment)
+}
+>>>markdown
+How does Gonzaga compare to the new Pac-12 schools with regards to endowment amount?
+>>>malloy
+run: NewConference -> {
+    group_by: SchoolName, Conference
+    aggregate: Endowment is sum(Endowment)
+}
+>>>malloy
+# bar_chart
+run: NewConference -> {
+    group_by: SchoolName, Conference
     aggregate: Endowment is sum(Endowment)
 }
 >>>markdown
