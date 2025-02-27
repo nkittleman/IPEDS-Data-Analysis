@@ -1,30 +1,65 @@
 >>>malloy
 source: SchoolName is duckdb.table('SchoolID.csv') extend{
+    rename: SchoolID is UNITID
+    rename: SchoolName is INSTNM
+    rename: State is STABBR
     primary_key: SchoolID
 }
 
 source: Budget is duckdb.table('Expenses.csv') extend{
-    rename: OperatingBudget is TotalExpenses
+    rename: OperatingBudget is F1D02
+    rename: SchoolID is UNITID
     primary_key: SchoolID
 }
 
 source: Enrollment is duckdb.table('Enrollment.csv') extend{
+    rename: TotalEnrollment is ENRTOT
+    rename: SchoolID is UNITID
+    rename: GraduateEnrollment is EFGRAD
+    rename: GraduatePercentWhite is PCGENRWH
+    rename: GraduatePercentBlack is PCGENRBK
+    rename: GraduatePercentHispanic is PCGENRHS
+    rename: GraduatePercentAsian is PCGENRAP
+    rename: GraduatePercentNative is PCGENRAS
+    rename: GraduatePercentHawaiian is PCGENRNH
+    rename: GraduatePercentMixed is PCGENRAN
+    rename: GraduatePercentTwoPlus is PCGENR2M
+    rename: GraduatePercentUnknown is PCGENRUN
+    rename: GraduatePercentWomen is PCGENRW
     join_one: SchoolName with SchoolID
     join_one: Budget with SchoolID
     primary_key: SchoolID
 }
 
 source: OldEnrollment is duckdb.table('./2019Enrollment.csv') extend{
+    rename: TotalEnrollment is ENRTOT
+    rename: SchoolID is UNITID
+    rename: GraduateEnrollment is EFGRAD
+    rename: GraduatePercentWhite is PCGENRWH
+    rename: GraduatePercentBlack is PCGENRBK
+    rename: GraduatePercentHispanic is PCGENRHS
+    rename: GraduatePercentAsian is PCGENRAP
+    rename: GraduatePercentNative is PCGENRAS
+    rename: GraduatePercentHawaiian is PCGENRNH
+    rename: GraduatePercentMixed is PCGENRAN
+    rename: GraduatePercentTwoPlus is PCGENR2M
+    rename: GraduatePercentUnknown is PCGENRUN
+    rename: GraduatePercentWomen is PCGENRW
     join_one: SchoolName with SchoolID
     primary_key: SchoolID
 }
 
 source: RetentionRates is duckdb.table('RetentionRates.csv') extend{
+    rename: SchoolID is UNITID
+    rename: RetentionRate is RET_PCF
     join_one: SchoolName with SchoolID
     primary_key: SchoolID
 }
 
 source: FinancialData is duckdb.table('FinancialData.csv') extend{
+    rename: Endowment is F1H02
+    rename: SchoolID is UNITID
+    rename: OperatingBudget is F1D02
     join_one: SchoolName with SchoolID
     join_one: Enrollment with SchoolID
     join_one: Budget with SchoolID
@@ -232,7 +267,7 @@ run: Washington -> {
     # percent
     aggregate: Asian is sum(Enrollment.GraduatePercentAsian / 100)
     # percent
-    aggregate: Native is sum(Enrollment.GraduatePercentIndian / 100)
+    aggregate: Native is sum(Enrollment.GraduatePercentNative / 100)
     # percent
     aggregate: Hawaiian is sum(Enrollment.GraduatePercentHawaiian / 100)
     # percent
@@ -263,7 +298,7 @@ run: Washington -> {
     # percent
     aggregate: MixedRace is sum(OldEnrollment.GraduatePercentMixed / 100)
     # percent
-    aggregate: `2+MixedRace` is sum(OldEnrollment.GraduatePercent2Plus / 100)
+    aggregate: `2+MixedRace` is sum(OldEnrollment.GraduatePercentTwoPlus / 100)
     # percent
     aggregate: Unknown is sum(OldEnrollment.GraduatePercentUnknown / 100)
 }
