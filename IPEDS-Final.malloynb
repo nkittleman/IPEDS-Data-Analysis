@@ -6,15 +6,7 @@ source: SchoolName is duckdb.table('SchoolID.csv') extend{
     primary_key: SchoolID
 }
 
-source: Budget is duckdb.table('Expenses.csv') extend{
-    rename: OperatingBudget is F1D02
-    rename: SchoolID is UNITID
-    primary_key: SchoolID
-}
-
-// Source DRVEF files:
-
-source: Enrollment_10 is duckdb.table('./DRVEF/DRVEF20*.csv') extend{
+source: Enrollment_10 is duckdb.table('./DRVEF20*.csv') extend{
     dimension: SurveyYear is concat(survey_year,'-01-01')::date
     rename: TotalEnrollment is ENRTOT
     rename: SchoolID is UNITID
@@ -34,8 +26,11 @@ source: Enrollment_10 is duckdb.table('./DRVEF/DRVEF20*.csv') extend{
     primary_key: SchoolID
 }
 
-// end new source
-
+source: Budget is duckdb.table('Expenses.csv') extend{
+    rename: OperatingBudget is F1D02
+    rename: SchoolID is UNITID
+    primary_key: SchoolID
+}
 
 source: Enrollment is duckdb.table('Enrollment.csv') extend{
     rename: TotalEnrollment is ENRTOT
@@ -89,27 +84,18 @@ source: FinancialData is duckdb.table('FinancialData.csv') extend{
     join_one: Enrollment with SchoolID
     join_one: Budget with SchoolID
     primary_key: SchoolID
-
-
-    join_one: Enrollment_10 with SchoolID // add enrollment trends join
 }
 
 source: NewConference is duckdb.table('./Pac-12New.csv') extend{
     join_one: Enrollment with SchoolID
     join_one: RetentionRates with SchoolID
     join_one: FinancialData with SchoolID
-
-
-    join_one: Enrollment_10 with SchoolID // add enrollment trends join
 }
 
 source: GraduationRates is duckdb.table('GraduationRates.csv') extend{
     join_one: Enrollment with SchoolID
     join_one: RetentionRates with SchoolID
     join_one: FinancialData with SchoolID
-
-
-    join_one: Enrollment_10 with SchoolID // add enrollment trends join
 }
 
 source: Washington is duckdb.table('Washington.csv') extend{
@@ -117,8 +103,6 @@ source: Washington is duckdb.table('Washington.csv') extend{
     rename: SchoolName is City
     join_one: Enrollment with SchoolID
     join_one: OldEnrollment with SchoolID
-
-
     join_one: Enrollment_10 with SchoolID // add enrollment trends join
 }
 >>>markdown
@@ -250,7 +234,25 @@ run: NewConference -> {
     aggregate: Endowment is sum(Endowment)
 }
 >>>markdown
-<mark> Begin Grad Enrollment Modification with new files </mmark>
+How does graduate student enrollment differ between schools in Washington State in 2024? How did it differ in 2019?
+>>>malloy
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
+    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
+}
+>>>malloy
+# bar_chart
+run: Washington -> {
+    group_by: SchoolName
+    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
+}
 >>>markdown
 What is the total graduate student enrollment trend in Washington state over the past 10 years (since the 2014-15 academic year)
 >>>malloy
@@ -258,35 +260,6 @@ run: Washington -> {
     group_by: Enrollment_10.SurveyYear.year
     aggregate: TotalGraduateEnrollment is Enrollment_10.GraduateEnrollment.sum()
     order_by: SurveyYear
-}
->>>malloy
-# line_chart {size=lg}
-run: Washington -> {
-    group_by: Enrollment_10.SurveyYear.year
-    aggregate: GraduateEnrollment is Enrollment_10.GraduateEnrollment.sum()
-    # tooltip
-    nest: Ethnicity is {
-        group_by: Enrollment_10.SurveyYear.year
-        # percent
-        aggregate: 
-            White is Enrollment_10.GraduatePercentWhite.avg()/100
-            Black is Enrollment_10.GraduatePercentBlack.avg()/100
-            Hispanic is Enrollment_10.GraduatePercentHispanic.avg()/100
-            Asian is Enrollment_10.GraduatePercentAsian.avg()/100
-            `Alaskan/American Native` is Enrollment_10.GraduatePercentNative.avg()/100
-            `Native Hawaiian/Pacific Islander` is Enrollment_10.GraduatePercentHawaiian.avg()/100
-            `Asian Pacific Islander` is Enrollment_10.GraduatePercentAsianPacificIslander.avg()/100
-            TwoPlus is Enrollment_10.GraduatePercentTwoPlus.avg()/100
-            Unknown is Enrollment_10.GraduatePercentUnknown.avg()/100
-    }
-    # tooltip
-    nest: Gender is {
-        group_by: Enrollment_10.SurveyYear.year
-        # percent
-        aggregate:
-            Men is Enrollment_10.GraduatePercentMen.avg()/100
-            Women is Enrollment_10.GraduatePercentWomen.avg()/100
-    }
 }
 >>>malloy
 # bar_chart {size=lg}
@@ -319,28 +292,6 @@ run: Washington -> {
     order_by: SurveyYear 
 }
 >>>markdown
-<mark> End Section </mmark>
->>>markdown
-How does graduate student enrollment differ between schools in Washington State in 2024? How did it differ in 2019?
->>>malloy
-run: Washington -> {
-    group_by: SchoolName
-    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
-    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
-}
->>>malloy
-# bar_chart
-run: Washington -> {
-    group_by: SchoolName
-    aggregate: `2024 GraduateEnrollment` is sum(Enrollment.GraduateEnrollment)
-}
->>>malloy
-# bar_chart
-run: Washington -> {
-    group_by: SchoolName
-    aggregate: `2019 GraduateEnrollment` is sum(OldEnrollment.GraduateEnrollment)
-}
->>>markdown
 How does graduate student enrollment differ by school sector in Washington State (Public / Private / For-Profit / Non-Profit) in 2024? How did it differ in 2019?
 >>>malloy
 run: Washington -> {
@@ -360,8 +311,6 @@ run: Washington -> {
     group_by: Sector
     aggregate: `2019 GraduateStudents` is sum(Enrollment.GraduateEnrollment)
 }
->>>markdown
-<mark> Begin Section </mark>
 >>>markdown
 What are the year over year trends in graduate student enrollment by sector for Washington State Schools (public/private, for-profit/not-for-profit) in the last ten years (2014-15AY to 2023-24AY)?
 >>>malloy
@@ -397,8 +346,6 @@ run: Washington -> {
     
 }
 >>>markdown
-<mark> End Section </mark>
->>>markdown
 How does graduate student enrollment differ between schools in Washington State with regards to race in 2024?
 >>>malloy
 run: Washington -> {
@@ -417,7 +364,7 @@ run: Washington -> {
     # percent
     aggregate: Hawaiian is sum(Enrollment.GraduatePercentHawaiian / 100)
     # percent
-    aggregate: MixedRace is sum(Enrollment.GraduatePercentMixed / 100)
+    aggregate: AsianPacificIslander is sum(Enrollment.GraduatePercentMixed / 100)
     # percent
     aggregate: `2+MixedRace` is sum(Enrollment.GraduatePercentTwoPlus / 100)
     # percent
@@ -442,7 +389,7 @@ run: Washington -> {
     # percent
     aggregate: Hawaiian is sum(OldEnrollment.GraduatePercentHawaiian / 100)
     # percent
-    aggregate: MixedRace is sum(OldEnrollment.GraduatePercentMixed / 100)
+    aggregate: AsianPacificIslander is sum(OldEnrollment.GraduatePercentMixed / 100)
     # percent
     aggregate: `2+MixedRace` is sum(OldEnrollment.GraduatePercentTwoPlus / 100)
     # percent
